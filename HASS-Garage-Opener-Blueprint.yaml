@@ -1,0 +1,73 @@
+blueprint:
+  name: "Open Garage Door for Person"
+  description: "Open a garage door when a specific person arrives home."
+  domain: automation
+  input:
+    person_entity:
+      name: Person
+      description: The person to trigger the opening of the garage door.
+      selector:
+        entity:
+          domain: person
+    garage_door_entity:
+      name: Garage Door
+      description: The garage door to open.
+      selector:
+        entity:
+          domain: cover
+    time_restriction:
+      name: Time Restriction
+      description: Optional time window for when the automation should run.
+      default:
+        start: "06:00:00"
+        end: "22:00:00"
+      selector:
+        time: {}
+    tolerance:
+      name: Tolerance
+      description: Time in minutes to wait before opening the door.
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 60
+          unit_of_measurement: minutes
+  trigger:
+    - platform: state
+      entity_id: !input person_entity
+      from:
+        - not_home
+        - Driving
+      to: home
+  condition:
+    - condition: state
+      entity_id: !input garage_door_entity
+      state: closed
+    - condition: zone
+      entity_id: !input person_entity
+      zone: zone.home
+    - condition: time
+      after: !input time_restriction.start
+      before: !input time_restriction.end
+    - condition: not
+      conditions:
+        - condition: state
+          entity_id: !input person_entity
+          state:
+            - home
+            - unavailable
+            - unknown
+          for:
+            minutes: !input tolerance
+  action:
+    - service: cover.open_cover
+      target:
+        entity_id: !input garage_door_entity
+    - delay:
+        minutes: !input tolerance
+    - condition: state
+      entity_id: !input garage_door_entity
+      state: open
+    - service: notify.mobile_app_my_phone
+      data:
+        message: "Garage door opened for {{ trigger.to_state.attributes.friendly_name }}"
