@@ -13,7 +13,9 @@ blueprint:
     - **Zone Awareness:** Verifies the person is physically within the designated home zone before opening, reducing false triggers.
     
     - **Minimum Away Time:** Avoids accidental activations if the person only leaves briefly, ensuring the door opens only when needed.
-
+    
+    - **Recent Opening Prevention:** Avoids opening the door if it has been opened by other means within the last minute.
+    
   domain: automation
   input:
     person_entity:
@@ -73,6 +75,9 @@ condition:
   - condition: time
     after: !input time_restriction_start
     before: !input time_restriction_end
+  - condition: template
+    value_template: >-
+      {{ as_timestamp(now()) - as_timestamp(states.cover.{{ !input garage_door_entity }}.last_changed) > 60 }}
 action:
   - service: cover.open_cover
     target:
