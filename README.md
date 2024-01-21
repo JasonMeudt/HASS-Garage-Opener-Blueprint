@@ -1,0 +1,1 @@
+# HASS-Garage-Opener-Blueprint
