@@ -63,7 +63,7 @@ blueprint:
     - service: cover.open_cover
       target:
         entity_id: !input garage_door_entity
-    - delay: !input tolerance
+    - delay: '{{ tolerance }}'  # Corrected delay syntax
     - condition: state
       entity_id: !input garage_door_entity
       state: open
