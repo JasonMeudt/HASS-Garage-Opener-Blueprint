@@ -3,9 +3,42 @@ blueprint:
   description: "Open a garage door when a specific person arrives home."
   domain: automation
   input:
-    # ... (inputs remain the same)
+    person_entity:
+      name: Person
+      description: The person to trigger the opening of the garage door.
+      selector:
+        entity:
+          domain: person
+    garage_door_entity:
+      name: Garage Door
+      description: The garage door to open.
+      selector:
+        entity:
+          domain: cover
+    time_restriction:
+      name: Time Restriction
+      description: Optional time window for when the automation should run.
+      default:
+        start: "06:00:00"
+        end: "22:00:00"
+      selector:
+        time: {}
+    tolerance:
+      name: Tolerance
+      description: Time in minutes to wait before opening the door.
+      default: 5
+      selector:
+        number:
+          min: 0
+          max: 60
+          unit_of_measurement: minutes
   trigger:
-    # ... (trigger remains the same)
+    - platform: state
+      entity_id: !input person_entity
+      from:
+        - not_home
+        - Driving
+      to: home
   condition:
     - condition: state
       entity_id: !input garage_door_entity
