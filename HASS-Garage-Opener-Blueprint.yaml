@@ -63,10 +63,7 @@ blueprint:
     - service: cover.open_cover
       target:
         entity_id: !input garage_door_entity
-    - delay: !input tolerance  # Corrected delay syntax
-    - condition: state
-      entity_id: !input garage_door_entity
-      state: open
+    - delay: '{{ tolerance }}'  # Using template for delay
     - service: notify.mobile_app_my_phone
       data:
         message: "Garage door opened for {{ trigger.to_state.attributes.friendly_name }}"
