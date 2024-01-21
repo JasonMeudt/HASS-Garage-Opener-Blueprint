@@ -1,47 +1,81 @@
 blueprint:
-  name: "Open Garage Door for Person"
-  description: "Open a garage door when a specific person arrives home."
+  name: Open Garage Door for Person's Arrival
+  description: >-
+    **Automatically opens the garage door when a person arrives home, providing convenient and secure access.**
+    
+    - (ALL tracking entities MUST be defined under the person entity to accurately reflect in this automation.)
+
+
+    **Key Features:**
+
+    - **Time Restrictions:** Prevents the door from opening during late-night or early-morning hours, enhancing security.
+    
+    - **Zone Awareness:** Verifies the person is physically within the designated home zone before opening, reducing false triggers.
+    
+    - **Minimum Away Time:** Avoids accidental activations if the person only leaves briefly, ensuring the door opens only when needed.
+
   domain: automation
   input:
     person_entity:
       name: Person
-      description: The person to trigger the opening of the garage door.
+      description: Select the person entity that tracks arrivals home. This entity will trigger the automation.
       selector:
         entity:
           domain: person
     garage_door_entity:
       name: Garage Door
-      description: The garage door to open.
+      description: Select the cover entity that controls the garage door. This entity will be opened when the automation triggers.
       selector:
         entity:
           domain: cover
-  trigger:
-    - platform: state
-      entity_id: !input person_entity
-      from:
-        - not_home
-        - Driving
-      to: home
-  condition:
-    - condition: state
+    zone_entity:
+      name: Home Zone
+      description: Select the zone entity that represents your home area. This zone will confirm when a person has arrived home.
+      selector:
+        entity:
+          domain: zone
+    time_restriction_start:
+      name: Time Restriction Start
+      description: The earliest time of day that the garage door can be automatically opened. This prevents the door from opening during late-night or early-morning hours.
+      default: "06:00:00"
+    time_restriction_end:
+      name: Time Restriction End
+      description: The latest time of day that the garage door can be automatically opened. This ensures the door won't open during late-night hours.
+      default: "22:00:00"
+    not_home_duration:
+      name: Required Time Not Home
+      description: >-
+        The minimum amount of time (in minutes) that a person must have been away from home (not_home, unavailable, or unknown) before the automation triggers. This prevents false triggers if a person only leaves briefly.
+      default: 5
+trigger:
+  - platform: state
+    entity_id: !input person_entity
+    from:
+      - not_home
+      - Driving
+    to: home
+condition:
+  - condition: not
+    conditions:
+      - condition: state
+        entity_id: !input person_entity
+        state:
+          - home
+          - unavailable
+          - unknown
+        for: !input not_home_duration
+  - condition: state
+    entity_id: !input garage_door_entity
+    state: closed
+  - condition: zone
+    entity_id: !input person_entity
+    zone: !input zone_entity
+  - condition: time
+    after: !input time_restriction_start
+    before: !input time_restriction_end
+action:
+  - service: cover.open_cover
+    target:
       entity_id: !input garage_door_entity
-      state: closed
-    - condition: state
-      entity_id: !input person_entity
-      state: "not_home"  # Combining multiple "not" conditions for clarity
-      for:
-        hours: 0
-        minutes: 5
-        seconds: 0
-    - condition: zone
-      entity_id: !input person_entity
-      zone: zone.home
-    - condition: time
-      after: "06:00:00"
-      before: "22:00:00"
-  action:
-    - service: cover.open_cover
-      target:
-        entity_id: !input garage_door_entity
-  mode: queued
-  max: 10
+mode: queued
+max: 10
