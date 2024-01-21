@@ -1,53 +1,47 @@
-alias: "Garage Doors: Open for Dawn"
-description: ""
-trigger:
- - platform: state
-  entity_id: person.dawn_meudt
-  from:
-   - not_home
-   - Driving
-  to: home
-condition:
- - condition: not
-  conditions:
-   - condition: state
-    entity_id: person.dawn_meudt
-    state: home
-    for:
-     hours: 0
-     minutes: 5
-     seconds: 0
- - condition: not
-  conditions:
-   - condition: state
-    entity_id: person.dawn_meudt
-    state: unavailable
-    for:
-     hours: 0
-     minutes: 5
-     seconds: 0
- - condition: not
-  conditions:
-   - condition: state
-    entity_id: person.dawn_meudt
-    state: unknown
-    for:
-     hours: 0
-     minutes: 5
-     seconds: 0
- - condition: state
-  entity_id: cover.garage_door1
-  state: closed
- - condition: zone
-  entity_id: person.dawn_meudt
-  zone: zone.home
- - condition: time
-  after: "06:00:00"
-  before: "22:00:00"
-action:
- - service: cover.open_cover
-  target:
-   entity_id: cover.garage_door1
-  data: {}
-mode: queued
-max: 10
+blueprint:
+  name: "Open Garage Door for Person"
+  description: "Open a garage door when a specific person arrives home."
+  domain: automation
+  input:
+    person_entity:
+      name: Person
+      description: The person to trigger the opening of the garage door.
+      selector:
+        entity:
+          domain: person
+    garage_door_entity:
+      name: Garage Door
+      description: The garage door to open.
+      selector:
+        entity:
+          domain: cover
+  trigger:
+    - platform: state
+      entity_id: !input person_entity
+      from:
+        - not_home
+        - Driving
+      to: home
+  condition:
+    - condition: state
+      entity_id: !input garage_door_entity
+      state: closed
+    - condition: state
+      entity_id: !input person_entity
+      state: "not_home"  # Combining multiple "not" conditions for clarity
+      for:
+        hours: 0
+        minutes: 5
+        seconds: 0
+    - condition: zone
+      entity_id: !input person_entity
+      zone: zone.home
+    - condition: time
+      after: "06:00:00"
+      before: "22:00:00"
+  action:
+    - service: cover.open_cover
+      target:
+        entity_id: !input garage_door_entity
+  mode: queued
+  max: 10
